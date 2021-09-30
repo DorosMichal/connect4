@@ -11,7 +11,6 @@ class Player():
 class RandomPlayer(Player):
     def make_move(self, state):
         move = random.choice(state.get_legal_moves())
-        state.last_move = move
         return move
 
 class ManualPlayer(Player):
@@ -21,7 +20,10 @@ class ManualPlayer(Player):
     def make_move(self, state):
         self.board = state.board
         self.print_board()
-        move = int(input())
+        try:
+            move = int(input())
+        except ValueError:
+            return self.make_move(state)
         if move not in state.get_legal_moves():
             print(f'nie mozesz zrobić ruchu {move}, jeszcze raz')
             return self.make_move(state)

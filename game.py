@@ -16,23 +16,22 @@ class Game():
         moves = np.zeros(49, dtype=int)
 
         while True:
-            ctr = self.state.ctr
-            player_no = ctr % 2
-            move = self.players[player_no].make_move(self.state)
+            player = self.state.player
+            move = self.players[player].make_move(self.state)
             if move not in self.state.get_legal_moves():
-                raise ValueError(f'move {move} made by player {self.players[player_no]} was not legal')
-            moves[ctr] = move
-            self.state.update_board(move, player_no)
+                raise ValueError(f'move {move} made by player {self.players[player]} was not legal')
+            moves[self.state.ctr] = move
+            self.state.update_board(move)
 
-            if res:=self.state.is_terminal():
-                winner = res
+            if self.state.is_terminal():
+                winner = self.state.result()
 
                 if self.end:
                     for i in range(2):
                         self.players[i].end(self.state, winner)
                 if self.track:
                     with open(f"game{games_played}", 'w') as file:
-                        file.write(str(moves[:ctr + 1])[1:-1] + f'\n{winner}')
+                        file.write(str(moves[:self.state.ctr])[1:-1] + f'\n{winner}')
                 return winner
         
         

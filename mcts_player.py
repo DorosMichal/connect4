@@ -10,7 +10,7 @@ def sgn(x):
     if x < 0: return -1
     return 0
 
-class Node():
+class MCTS_Node():
     C = sqrt(2)
     def __init__(self, state, parent, move):
         self.state = state
@@ -22,44 +22,42 @@ class Node():
 
     def priority(self):
         if self.chosen == 0: return INF
-        return self.won/self.chosen + Node.C * sqrt(log(self.parent.chosen)/self.chosen)
+        return self.won/self.chosen + MCTS_Node.C * sqrt(log(self.parent.chosen)/self.chosen)
 
     def select(self):
-        pass
-
-
-class MCTS_Node(Node):
-
-    def select(self):
-        if self.children is None:
+        if self.state.is_terminal() or self.children is None:
             return self
         return max(self.children, key=lambda c : c.priority()).select()
 
     def rollout(self):
-        game = Game(RandomPlayer(), RandomPlayer(), self.state, track=False)
+        game = Game(RandomPlayer(), RandomPlayer(), self.state.copy(), track=False)
         return game.play()
 
     def update_res(self, res):
-        self.chosen += 1
-        player = self.state.ctr % 2
-        self.won += Connect4State.score_map[player] == res
+        self.chosen += 2
+        player = self.state.player ^ 1
+        self.won += (Connect4State.score_map[player] == res) * 2 # if win
+        self.won += (res == 0)                                   # if draw
         
     def give_child_with_move(self, move):
         return list(filter(lambda c: c.move == move, self.children))[0]
 
 class MCTS:
-    N = 1000
+    N = 10
     def __init__(self, root):
         self.root = root
-        self.root.children = self._create_children(root)
+        self.root.children = MCTS._create_children(root)
+        # for child in self.root.children:
+        #     child.children = MCTS._create_children(child)
 
-    def _create_children(self, node):
-        player = node.state.ctr % 2
+    @staticmethod
+    def _create_children(node):
+        player = node.state.player
         legal_moves = node.state.get_legal_moves()
         res = []
         for move in legal_moves:
             new_state = node.state.copy()
-            new_state.update_board(move, player ^ 1)
+            new_state.update_board(move)
             child_node = MCTS_Node(new_state, node, move)
             res.append(child_node)
         return res
@@ -70,18 +68,20 @@ class MCTS:
             
     def big_rollout(self):
         node_to_expand = self.root.select()
-        res = node_to_expand.state.is_terminal()
-        if not res:
+        res = None
+        if node_to_expand.state.is_terminal():
+            res = node_to_expand.state.result()
+        else:
             node_to_expand.children = self._create_children(node_to_expand)
             res = self.simulate(node_to_expand)
 
         node = node_to_expand
-        while node.parent is None:
+        while node is not None:
             node.update_res(res)
             node = node.parent
 
     def give_best_node(self):
-        return max(self.root.state.children, lambda c: c.priority())
+        return max(self.root.children, key=lambda c: c.chosen) #czy po priority?
     
     def make_best_move(self):
         best_node = self.give_best_node()
@@ -90,19 +90,28 @@ class MCTS:
 
 class MCTS_Player(Player):
     def __init__(self, depth=100):
+        #depth must be at least number of children so that it goes two levels and generate children
         root = MCTS_Node(Connect4State(), None, None)
+        # root.state.ctr = -1
         self.mcts = MCTS(root)
         self.depth = depth
 
-    def make_move(self, state):
-        if state.ctr > 2:
-            self.mcts.root = self.mcts.root.give_child_with_move(state.last_move)
+    def make_move(self, game_state):
+        self.update_root(game_state)
         for _ in range(self.depth):
             self.mcts.big_rollout()
         
         best = self.mcts.make_best_move()
-        state.last_move = best
         return best
 
+    def update_root(self, game_state):
+        if game_state.ctr >= 2: #skip at first move
+            move = game_state.last_move
+            new_root = self.mcts.root.give_child_with_move(move)
+            self.mcts.root = new_root
+        
 
 
+
+
+### dodawaj pól punktu przy remisach

@@ -8,7 +8,5 @@ mcts_player = MCTS_Player()
 manual_player = ManualPlayer()
 
 
-# game = Game(random_player2, random_player1)
-
-game = Game(manual_player, mcts_player)
+game = Game(mcts_player, manual_player,)
 game.play()
