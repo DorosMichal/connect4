@@ -62,6 +62,9 @@ class Connect4State():
         if move is None: return 0
         return self._someone_wins(move, player) > -1 or self.ctr == 49
 
+    def _is_terminal(self):
+        pass
+
     def result(self):
         move = self.last_move
         player = self.player ^ 1

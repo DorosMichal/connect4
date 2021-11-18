@@ -8,10 +8,18 @@ class Player():
     def end(self, board, winner):
         pass
 
+    @classmethod
+    def creator(*args):
+        pass
+
 class RandomPlayer(Player):
     def make_move(self, state):
         move = random.choice(state.get_legal_moves())
         return move
+
+    @classmethod
+    def creator(cls):
+        return lambda: RandomPlayer()
 
 class ManualPlayer(Player):
     def __init__(self):
@@ -30,6 +38,10 @@ class ManualPlayer(Player):
         else:
             state.last_move = move
             return move
+
+    @classmethod
+    def creator(cls):
+        return lambda: ManualPlayer()
 
     def end(self, board, winner):
         self.board = board

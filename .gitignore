@@ -1,0 +1,7 @@
+games/game*
+*.xml
+*.pyc
+boards
+res
+squashed
+*.iml
