@@ -2,7 +2,6 @@ from math import sqrt, log
 from state import Connect4State
 from game import Game
 from playeres import RandomPlayer, Player
-from keras.models import load_model
 import numpy as np
 
 INF = 10 ** 9

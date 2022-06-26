@@ -1,44 +1,55 @@
-from playeres import RandomPlayer, ManualPlayer, NetPlayer, NetValuePlayer
+from enum import Enum
+from typing import List, Tuple
+from playeres import RandomPlayer, ManualPlayer
 from mcts_player import MCTS_Player
 from game import Game
-from datetime import datetime
-from playeres import Method
 
-random_player = RandomPlayer.creator()
-net_player = NetPlayer.creator(Method.MOVE)
-mcts_net = MCTS_Player.creator(7, 5, True)
-mcts_roll = MCTS_Player.creator(7, 1, False)
-net_value = NetValuePlayer.creator()
-# mcts_player2 = MCTS_Player.creator(100, 10)
-# mcts_player3 = MCTS_Player.creator(150, 30)
-manual_player = ManualPlayer.creator()
-# score = {-1:0, 0:0, 1:0}
-# for i in range(100):
-#     game = Game(random_player, mcts_player)
-#     res = game.play(track=False)
-#     score[res] += 1
-# print(score)
-# def play_batch(p1, p2, n):
-#     score = {-1:0, 0:0, 1:0, 2:0}
-#     for i in range(n):
-#         game = Game(p1, p2)
-#         try:
-#             res = game.play(track=False)
-#             score[res] += 1
-#         except:
-#             score[2] += 1
-#     print(score)
+available_oponenets = [RandomPlayer, MCTS_Player]
 
-# play_batch(random_player, random_player, 200)
-# play_batch(random_player, mcts_player, 200)
-# play_batch(mcts_player, random_player, 200)
-# play_batch(mcts_player, mcts_player2, 100)
-# play_batch(mcts_player2, mcts_player, 100)
-# play_batch(mcts_player, mcts_player3, 50)
-# play_batch(mcts_player3, mcts_player, 50)
-# play_batch(mcts_player3, mcts_player2, 100)
-# play_batch(mcts_player2, mcts_player3, 100)
+def ask_for_input(message: str, options: List[str], numeric: bool=False) -> Tuple[int, str]:
+    print(message)
+    for i, option in enumerate(options):
+        print(f"{i}) {option}")
+    while True:
+        try:
+            choice = int(input('choose number: '))
+            if numeric:
+                return choice, ''
+            if choice in range(len(options)):
+                return choice, options[choice]
+            raise ValueError
+        except ValueError:
+            print('Wrong value, please input number of chosen option')
+        except EOFError:
+            print('Exiting, bye bye')
+            exit(0)
 
-game = Game(net_value, manual_player)
-game.play()
-# print(game.play_batch(30, False, False, 0))
+class Modes(Enum):
+    single_player = "single-player"
+    pvp = "pvp"
+
+def welcome_prompt() -> None:
+    print("Hi, let's play a connect4 game")
+    _, mode = ask_for_input("What mode do you want to play?", [m.value for m in Modes])
+    p1 = ManualPlayer()
+    p2 = None
+    if Modes(mode) == Modes.single_player:
+        oponent_no, _ = ask_for_input("Choose your opponent", [op.__name__ for op in available_oponenets])
+        if available_oponenets[oponent_no] == MCTS_Player:
+            depth, _ = ask_for_input('Choose depth of MCTS Player', [], True)
+            rollout_no, _ = ask_for_input('Choose number of rollouts', [], True)
+            p2 = MCTS_Player(depth, rollout_no)
+        p2 = available_oponenets[oponent_no]()
+        player_to_start, _ = ask_for_input("Do you want to go first or second?", ['first', 'second'])
+    
+    if p2 is None:
+        p2 = ManualPlayer()
+    if player_to_start == 0:
+        p1, p2 = p2, p1
+    
+    game = Game(p1, p2)
+    game.play()
+    welcome_prompt()
+
+if __name__ == "__main__":
+    welcome_prompt()
